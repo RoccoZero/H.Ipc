@@ -24,39 +24,40 @@ namespace H.Ipc.Apps.Wpf
             {
                 try
                 {
-                    var json = args.Message ?? throw new global::System.InvalidOperationException("Message is null.");
-                    var request = Deserialize<global::H.IpcGenerators.RpcRequest>(json);
+                    var payload = args.Message ?? throw new global::System.InvalidOperationException("Message is null.");
+                    var request = Deserialize<global::H.IpcGenerators.RpcRequest>(payload);
 
                     if (request.Type == global::H.IpcGenerators.RpcRequestType.RunMethod)
                     {
-                        var method = Deserialize<global::H.IpcGenerators.RunMethodRequest>(json);
+                        var method = Deserialize<global::H.IpcGenerators.RunMethodRequest>(payload);
                         switch (method.Name)
                         {
                             case nameof(ShowTrayIcon):
                             {
-                                var arguments = Deserialize<ShowTrayIconServerMethod>(json);
+ 
                                 await ShowTrayIcon();
                                 break;
                             }
                             case nameof(HideTrayIcon):
                             {
-                                var arguments = Deserialize<HideTrayIconServerMethod>(json);
+ 
                                 await HideTrayIcon();
                                 break;
                             }
                             case nameof(SendText):
                             {
-                                var arguments = Deserialize<SendTextServerMethod>(json);
-                                await SendText(arguments.Text);
+                                var text = Deserialize<string>(method.Arguments[0]);
+                                await SendText(text);
                                 break;
                             }
                             case nameof(GetPoints):
                             {
-                                var arguments = Deserialize<GetPointsServerMethod>(json);
+ 
                                 var resultCore = await GetPoints();
                                 var result = global::H.IpcGenerators.ReturnMethodResultFactory.Create(resultCore);
-                                var jsonStr = Serialize(result);
-                                await connection.WriteAsync(jsonStr).ConfigureAwait(false);
+                                result.ResultPayload = Serialize(resultCore);
+                                var responsePayload = Serialize<global::H.IpcGenerators.ReturnMethodResultRequest>(result);
+                                await connection.WriteAsync(responsePayload).ConfigureAwait(false);
                                 break;
                             }
                         }
@@ -66,24 +67,24 @@ namespace H.Ipc.Apps.Wpf
                 {
                     OnExceptionOccurred(exception);
                     var result = new global::H.IpcGenerators.ReturnMethodResultRequest(false, exception.Message);
-                    var jsonStr = Serialize(result);
-                    await connection.WriteAsync(jsonStr).ConfigureAwait(false);
+                    var payload = Serialize(result);
+                    await connection.WriteAsync(payload).ConfigureAwait(false);
                 }
             };
         }
 
-        private static T Deserialize<T>(string json)
+        private static T Deserialize<T>(string payload)
         {
             return
-                global::System.Text.Json.JsonSerializer.Deserialize<T>(json) ??
+                global::H.IpcGenerators.IpcSerializer.Deserialize<T>(payload) ??
                 throw new global::System.ArgumentException($@"Returned null when trying to deserialize to {typeof(T)}.
-    json:
-    {json}");
+    payload:
+    {payload}");
         }
 
         private static string Serialize<T>(T obj)
         {
-            return global::System.Text.Json.JsonSerializer.Serialize(obj);
+            return global::H.IpcGenerators.IpcSerializer.Serialize(obj);
         }
     }
 }

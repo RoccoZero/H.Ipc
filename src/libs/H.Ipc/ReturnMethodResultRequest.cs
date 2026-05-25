@@ -6,15 +6,15 @@
 /// This class functions as the base class for the generic version, which contains the actual
 /// result type as defined in the user's interface.
 /// As the generated server-side code does with the <see cref="RpcRequest"/>, the generated
-/// client-side code first deserializes the returned JSON string into an object of this base
-/// type, checks its ResultType property, and deserializes the JSON again, but this time into
-/// the derived generic ReturnMethodResultRequest{T} with T being the return type specified in
-/// the user's defined protocol interface.
+/// client-side code first deserializes the returned payload into an object of this base
+/// type, checks its ResultType property, and deserializes ResultPayload again into
+/// the return type specified in the user's defined protocol interface.
 /// </summary>
+[MessagePack.MessagePackObject]
 public class ReturnMethodResultRequest : RpcRequest
 {
     /// <summary>
-    /// Needed by the JSON serializer to be able to deserialize. Defaults to a failed return value,
+    /// Needed by the serializer to be able to deserialize. Defaults to a failed return value,
     /// i.e. IsSuccessful set to false.
     /// </summary>
     public ReturnMethodResultRequest() : base(RpcRequestType.ReturnMethodResult)
@@ -51,17 +51,26 @@ public class ReturnMethodResultRequest : RpcRequest
     /// The type name of the result. Used in the client-side code to know which result
     /// deserialization to use.
     /// </summary>
+    [MessagePack.Key(2)]
     public string ResultType { get; set; }
 
     /// <summary>
     /// Indication of whether the method call was successful.
     /// </summary>
+    [MessagePack.Key(3)]
     public bool IsSuccessful { get; set; }
 
     /// <summary>
     /// Any error message to accompany a failure result.
     /// </summary>
+    [MessagePack.Key(4)]
     public string? ErrMsg { get; set; }
+
+    /// <summary>
+    /// Serialized method result payload.
+    /// </summary>
+    [MessagePack.Key(5)]
+    public string? ResultPayload { get; set; }
 }
 
 /// <summary>
@@ -71,7 +80,7 @@ public class ReturnMethodResultRequest : RpcRequest
 public class ReturnMethodResultRequest<T> : ReturnMethodResultRequest
 {
     /// <summary>
-    /// Needed by JSON deserialization
+    /// Needed by deserialization.
     /// </summary>
     public ReturnMethodResultRequest()
     {

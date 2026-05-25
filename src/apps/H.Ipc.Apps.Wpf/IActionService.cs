@@ -1,9 +1,12 @@
-﻿using System.Windows;
+using System.Windows;
+using MessagePack;
 
 namespace H.Ipc.Apps.Wpf;
 
+[MessagePackObject]
 public class Person
 {
+    [Key(0)]
     public string? Name { get; set; }
 }
 

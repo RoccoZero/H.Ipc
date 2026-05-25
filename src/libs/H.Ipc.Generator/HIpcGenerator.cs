@@ -48,16 +48,17 @@ public class HIpcGenerator : IIncrementalGenerator
         (SemanticModel SemanticModel, AttributeData AttributeData, ClassDeclarationSyntax ClassSyntax, INamedTypeSymbol ClassSymbol) tuple)
     {
         var (_, _, _, classSymbol) = tuple;
-        
+
         var @interface = classSymbol.Interfaces.First();
         var methods = @interface
             .GetMembers()
             .OfType<IMethodSymbol>()
             .ToArray();
-        
-        var fullClassName = classSymbol.ToString();
-        var @namespace = fullClassName.Substring(0, fullClassName.LastIndexOf('.'));
-        var className = fullClassName.Substring(fullClassName.LastIndexOf('.') + 1);
+
+        var fullClassName = classSymbol.ToDisplayString();
+        var namespaceSeparatorIndex = fullClassName.LastIndexOf('.');
+        var @namespace = namespaceSeparatorIndex >= 0 ? fullClassName.Substring(0, namespaceSeparatorIndex) : string.Empty;
+        var className = namespaceSeparatorIndex >= 0 ? fullClassName.Substring(namespaceSeparatorIndex + 1) : fullClassName;
         var interfaceName = @interface.Name;
 
         return new ClassData(
@@ -80,14 +81,14 @@ public class HIpcGenerator : IIncrementalGenerator
             Name: $"{@class.Name}.IpcServer.generated.cs",
             Text: SourceGenerationHelper.GenerateServerImplementation(@class));
     }
-    
+
     private static FileWithName GetClientRequestsSourceCode(ClassData @class)
     {
         return new FileWithName(
             Name: $"{@class.InterfaceName}.ClientRequests.generated.cs",
             Text: SourceGenerationHelper.GenerateRequests(@class, server: false));
     }
-    
+
     private static FileWithName GetServerRequestsSourceCode(ClassData @class)
     {
         return new FileWithName(

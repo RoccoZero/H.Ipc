@@ -52,7 +52,7 @@ namespace H.Ipc.Apps.Wpf
             ThrowIfWaitingForServer();
             try
             {
-                await WriteAsync(new ShowTrayIconClientMethod()).ConfigureAwait(false);
+                await WriteAsync(CreateRunMethodRequest(nameof(ShowTrayIcon))).ConfigureAwait(false);
             }
             catch (global::System.Exception exception)
             {
@@ -65,7 +65,7 @@ namespace H.Ipc.Apps.Wpf
             ThrowIfWaitingForServer();
             try
             {
-                await WriteAsync(new HideTrayIconClientMethod()).ConfigureAwait(false);
+                await WriteAsync(CreateRunMethodRequest(nameof(HideTrayIcon))).ConfigureAwait(false);
             }
             catch (global::System.Exception exception)
             {
@@ -78,7 +78,7 @@ namespace H.Ipc.Apps.Wpf
             ThrowIfWaitingForServer();
             try
             {
-                await WriteAsync(new SendTextClientMethod(text)).ConfigureAwait(false);
+                await WriteAsync(CreateRunMethodRequest(nameof(SendText), global::H.IpcGenerators.IpcSerializer.Serialize(text))).ConfigureAwait(false);
             }
             catch (global::System.Exception exception)
             {
@@ -90,20 +90,21 @@ namespace H.Ipc.Apps.Wpf
         {
             ThrowIfWaitingForServer();
 
-            var tcs = new global::System.Threading.Tasks.TaskCompletionSource<System.Int32>();
+            var tcs = new global::System.Threading.Tasks.TaskCompletionSource<int>();
 
             void ReceiveResult(object? sender, H.Pipes.Args.ConnectionMessageEventArgs<string?> e)
             {
-                var jsonResult = e.Message ?? throw new global::System.ArgumentException("Message property of received H.Pipes.Args.ConnectionMessageEventArgs<string> object is null");
-                var result = default(System.Int32);
-                var resultGeneral = global::System.Text.Json.JsonSerializer.Deserialize<global::H.IpcGenerators.ReturnMethodResultRequest>(jsonResult);
+                var payload = e.Message ?? throw new global::System.ArgumentException("Message property of received H.Pipes.Args.ConnectionMessageEventArgs<string> object is null");
+                var result = default(int);
+                var resultGeneral = global::H.IpcGenerators.IpcSerializer.Deserialize<global::H.IpcGenerators.ReturnMethodResultRequest>(payload);
                 if (resultGeneral?.ResultType == "Int32")
                 {
-                    var resultSpecific = global::System.Text.Json.JsonSerializer.Deserialize<global::H.IpcGenerators.ReturnMethodResultRequest<System.Int32>>(jsonResult);
-                    if (resultSpecific != null)
+                    if (string.IsNullOrWhiteSpace(resultGeneral.ResultPayload))
                     {
-                        result = resultSpecific.Result;
+                        throw new global::System.InvalidOperationException("ResultPayload is empty.");
                     }
+
+                    result = global::H.IpcGenerators.IpcSerializer.Deserialize<int>(resultGeneral.ResultPayload);
                 }
 
                 Connection.MessageReceived -= ReceiveResult;
@@ -114,7 +115,7 @@ namespace H.Ipc.Apps.Wpf
             try
             {
                 Connection.MessageReceived += ReceiveResult;
-                await WriteAsync(new GetPointsClientMethod()).ConfigureAwait(false);
+                await WriteAsync(CreateRunMethodRequest(nameof(GetPoints))).ConfigureAwait(false);
 
                 var result = await tcs.Task;
                 isWaitingForServerResponse = false;
@@ -128,13 +129,25 @@ namespace H.Ipc.Apps.Wpf
             }
         }
 
-        private async global::System.Threading.Tasks.Task WriteAsync<T>(
-            T method,
+        private async global::System.Threading.Tasks.Task WriteAsync(
+            global::H.IpcGenerators.RunMethodRequest method,
             global::System.Threading.CancellationToken cancellationToken = default)
-            where T : global::H.IpcGenerators.RpcRequest
         {
-            var json = global::System.Text.Json.JsonSerializer.Serialize(method);
-            await Connection.WriteAsync(json, cancellationToken).ConfigureAwait(false);
+            var payload = global::H.IpcGenerators.IpcSerializer.Serialize(method);
+            await Connection.WriteAsync(payload, cancellationToken).ConfigureAwait(false);
+        }
+
+        private static global::H.IpcGenerators.RunMethodRequest CreateRunMethodRequest(
+            string name,
+            params string[] arguments)
+        {
+            var request = new global::H.IpcGenerators.RunMethodRequest
+            {
+                Name = name,
+                Arguments = arguments,
+            };
+
+            return request;
         }
     }
 }

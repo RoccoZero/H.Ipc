@@ -1,9 +1,17 @@
-﻿namespace H.Ipc.Generator.IntegrationTests;
+using MessagePack;
 
+namespace H.Ipc.Generator.IntegrationTests;
+
+[MessagePackObject]
 public class DataPoint
 {
+    [Key(0)]
     public int X { get; set; }
+
+    [Key(1)]
     public int Y { get; set; }
+
+    [Key(2)]
     public float Temperature { get; set; }
 }
 
