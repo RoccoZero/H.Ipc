@@ -9,6 +9,7 @@
   <PropertyGroup Label="NuGet">
     <Description>Core library for Inter-Process Communication.</Description>
     <PackageTags>ipc, generator, source generator, csharp 9</PackageTags>
+    <PackageId>RoccoZero.H.Ipc</PackageId>
   </PropertyGroup>
 
   <ItemGroup Label="Usings">
@@ -20,7 +21,7 @@
     <PackageReference Include="H.Generators.Extensions" Version="1.24.2" PrivateAssets="all" IncludeInPackage="true" />
     <PackageReference Include="MessagePack" Version="3.1.4" />
     <PackageReference Include="H.Pipes.AccessControl" Version="15.0.0" />
-    <None Include="..\H.Ipc.Generator\bin\$(Configuration)\net10.0\H.Generators.Extensions.dll" Pack="true" PackagePath="analyzers/dotnet" Visible="false" />
+    <None Include="..\H.Ipc.Generator\bin\$(Configuration)\netstandard2.0\H.Generators.Extensions.dll" Pack="true" PackagePath="analyzers/dotnet" Visible="false" />
   </ItemGroup>
-  
+
 </Project>
